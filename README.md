@@ -1,1 +1,33 @@
 # htmlText
+### 支持标签
+
+- `<p>`
+- `<div>`
+- `<br>`
+- `<b>`
+- `<i>`
+- `<strong>`
+- `<em>`
+- `<u>`
+- `<tt>`
+- `<dfn>`
+- `<sub>`
+- `<sup>`
+- `<blockquote>`
+- `<cite>`
+- `<big>`
+- `<small>`
+- `<font color="..." face="...">`
+- `<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`
+- `<a href="...">`
+- `< img src="...">`
+- `<ul>`
+- `<ol>`
+- `<li>`
+- `<code>`
+- `<center>`
+- `<strike>`
+- `<div>`[HTML contains two newline, there is one]
+- `<font size="..." color="...">`[extend support size]
+- `< img src="..." width="..." height="...">`[extend support width, height]
+- `<span>`
