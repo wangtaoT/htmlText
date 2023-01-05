@@ -17,17 +17,15 @@
 - `<cite>`
 - `<big>`
 - `<small>`
-- `<font color="..." face="...">`
 - `<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`
 - `<a href="...">`
-- `< img src="...">`
 - `<ul>`
 - `<ol>`
 - `<li>`
 - `<code>`
 - `<center>`
 - `<strike>`
-- `<div>`[HTML contains two newline, there is one]
-- `<font size="..." color="...">`[extend support size]
-- `< img src="..." width="..." height="...">`[extend support width, height]
-- `<span>`
+- `<div>`
+- `<font size="..." color="...">`
+- `< img src="..." width="..." height="...">`
+- `<span style="font-size: 14px; color: rgb(230, 0, 0);">...</span>`
