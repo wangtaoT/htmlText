@@ -1,13 +1,12 @@
-package com.wt.htmltext;
+package com.wt.htmltext
 
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 
 /**
  * 图片加载器
  */
-public interface HtmlImageLoader {
-
+interface HtmlImageLoader {
     /**
      * 图片加载回调
      */
@@ -15,37 +14,37 @@ public interface HtmlImageLoader {
         /**
          * 加载成功
          */
-        void onLoadComplete(Bitmap bitmap);
+        fun onLoadComplete(bitmap: Bitmap?)
 
         /**
          * 加载失败
          */
-        void onLoadFailed();
+        fun onLoadFailed()
     }
 
     /**
      * 加载图片
      */
-    void loadImage(String url, Callback callback);
+    fun loadImage(url: String?, callback: Callback)
 
     /**
      * 加载中的占位图
      */
-    Drawable getDefaultDrawable();
+    val defaultDrawable: Drawable
 
     /**
      * 加载失败的占位图
      */
-    Drawable getErrorDrawable();
+    val errorDrawable: Drawable
 
     /**
      * 图片最大宽度，即TextView最大宽度
      */
-    int getMaxWidth();
+    val maxWidth: Int
 
     /**
-     * 是否强制将图片等比例拉伸到最大宽度<br>
-     * 如果返回true，则需要指定{@link #getMaxWidth()}
+     * 是否强制将图片等比例拉伸到最大宽度<br></br>
+     * 如果返回true，则需要指定[.getMaxWidth]
      */
-    boolean fitWidth();
+    fun fitWidth(): Boolean
 }

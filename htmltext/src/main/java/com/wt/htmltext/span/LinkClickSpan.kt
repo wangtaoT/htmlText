@@ -1,29 +1,19 @@
-package com.wt.htmltext.span;
+package com.wt.htmltext.span
 
-import android.content.Context;
-import android.text.style.ClickableSpan;
-import android.view.View;
+import android.content.Context
+import android.text.style.ClickableSpan
+import android.view.View
+import com.wt.htmltext.OnTagClickListener
 
-import com.wt.htmltext.OnTagClickListener;
+class LinkClickSpan(private val context: Context, private val url: String) : ClickableSpan() {
 
-public class LinkClickSpan extends ClickableSpan {
-    private OnTagClickListener listener;
-    private final Context context;
-    private final String url;
+    private var listener: OnTagClickListener? = null
 
-    public LinkClickSpan(Context context, String url) {
-        this.context = context;
-        this.url = url;
+    fun setListener(listener: OnTagClickListener?) {
+        this.listener = listener
     }
 
-    public void setListener(OnTagClickListener listener) {
-        this.listener = listener;
-    }
-
-    @Override
-    public void onClick(View widget) {
-        if (listener != null) {
-            listener.onLinkClick(context, url);
-        }
+    override fun onClick(widget: View) {
+        listener?.onLinkClick(context, url)
     }
 }

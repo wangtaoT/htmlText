@@ -1,17 +1,15 @@
-package com.wt.htmltext;
+package com.wt.htmltext
 
-import android.content.Context;
+import android.content.Context
 
-import java.util.List;
-
-public interface OnTagClickListener {
+interface OnTagClickListener {
     /**
      * 图片被点击
      */
-    void onImageClick(Context context, List<String> imageUrlList, int position);
+    fun onImageClick(context: Context?, imageUrlList: List<String?>, position: Int)
 
     /**
      * 链接被点击
      */
-    void onLinkClick(Context context, String url);
+    fun onLinkClick(context: Context?, url: String)
 }

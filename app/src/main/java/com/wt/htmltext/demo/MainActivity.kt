@@ -54,23 +54,18 @@ class MainActivity : AppCompatActivity() {
                         })
                 }
 
-                override fun getDefaultDrawable(): Drawable {
-                    return ContextCompat.getDrawable(
+                override val defaultDrawable: Drawable
+                    get() = ContextCompat.getDrawable(
                         this@MainActivity,
                         R.mipmap.image_placeholder_loading
                     )!!
-                }
-
-                override fun getErrorDrawable(): Drawable {
-                    return ContextCompat.getDrawable(
+                override val errorDrawable: Drawable
+                    get() = ContextCompat.getDrawable(
                         this@MainActivity,
                         R.mipmap.image_placeholder_fail
                     )!!
-                }
-
-                override fun getMaxWidth(): Int {
-                    return getTextWidth()
-                }
+                override val maxWidth: Int
+                    get() = getTextWidth()
 
                 override fun fitWidth(): Boolean {
                     return false
@@ -79,13 +74,13 @@ class MainActivity : AppCompatActivity() {
             .setOnTagClickListener(object : OnTagClickListener {
                 override fun onImageClick(
                     context: Context?,
-                    imageUrlList: List<String>,
+                    imageUrlList: List<String?>,
                     position: Int
                 ) {
                     //TODO 点击图片
                 }
 
-                override fun onLinkClick(context: Context?, url: String?) {
+                override fun onLinkClick(context: Context?, url: String) {
                     //TODO 点击链接
                 }
             })

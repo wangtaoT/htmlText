@@ -1,190 +1,153 @@
-package com.wt.htmltext;
+package com.wt.htmltext
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Looper;
-import android.text.Html;
-import android.widget.TextView;
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.os.Looper
+import android.text.Html.ImageGetter
+import android.widget.TextView
+import java.util.regex.Pattern
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-class HtmlImageGetter implements Html.ImageGetter {
-    private static final String IMAGE_TAG_REGULAR = "<(img|IMG)\\s+([^>]*)>";
-    private static final Pattern IMAGE_TAG_PATTERN = Pattern.compile(IMAGE_TAG_REGULAR);
-    private static final Pattern IMAGE_WIDTH_PATTERN = Pattern.compile("(width|WIDTH)\\s*=\\s*\"?(\\w+)\"?");
-    private static final Pattern IMAGE_HEIGHT_PATTERN = Pattern.compile("(height|HEIGHT)\\s*=\\s*\"?(\\w+)\"?");
-
-    private TextView textView;
-    private HtmlImageLoader imageLoader;
-    private final List<ImageSize> imageSizeList;
-    private int index;
-
-    public HtmlImageGetter() {
-        imageSizeList = new ArrayList<>();
+internal class HtmlImageGetter : ImageGetter {
+    companion object {
+        private const val IMAGE_TAG_REGULAR = "<(img|IMG)\\s+([^>]*)>"
+        private val IMAGE_TAG_PATTERN = Pattern.compile(IMAGE_TAG_REGULAR)
+        private val IMAGE_WIDTH_PATTERN = Pattern.compile("(width|WIDTH)\\s*=\\s*\"?(\\w+)\"?")
+        private val IMAGE_HEIGHT_PATTERN = Pattern.compile("(height|HEIGHT)\\s*=\\s*\"?(\\w+)\"?")
+        private fun parseSize(size: String): Int {
+            return try {
+                Integer.valueOf(size)
+            } catch (e: NumberFormatException) {
+                -1
+            }
+        }
     }
 
-    public void setTextView(TextView textView) {
-        this.textView = textView;
+    private var textView: TextView? = null
+    private var imageLoader: HtmlImageLoader? = null
+    private val imageSizeList: MutableList<ImageSize> = ArrayList()
+    private var index = 0
+    fun setTextView(textView: TextView?) {
+        this.textView = textView
     }
 
-    public void setImageLoader(HtmlImageLoader imageLoader) {
-        this.imageLoader = imageLoader;
+    fun setImageLoader(imageLoader: HtmlImageLoader?) {
+        this.imageLoader = imageLoader
     }
 
-    public void getImageSize(String source) {
-        Matcher imageMatcher = IMAGE_TAG_PATTERN.matcher(source);
+    fun getImageSize(source: String?) {
+        val imageMatcher = IMAGE_TAG_PATTERN.matcher(source)
         while (imageMatcher.find()) {
-            String attrs = imageMatcher.group(2).trim();
-            int width = -1;
-            int height = -1;
-            Matcher widthMatcher = IMAGE_WIDTH_PATTERN.matcher(attrs);
+            val attrs = imageMatcher.group(2).trim { it <= ' ' }
+            var width = -1
+            var height = -1
+            val widthMatcher = IMAGE_WIDTH_PATTERN.matcher(attrs)
             if (widthMatcher.find()) {
-                width = parseSize(widthMatcher.group(2).trim());
+                width = parseSize(widthMatcher.group(2).trim { it <= ' ' })
             }
-            Matcher heightMatcher = IMAGE_HEIGHT_PATTERN.matcher(attrs);
+            val heightMatcher = IMAGE_HEIGHT_PATTERN.matcher(attrs)
             if (heightMatcher.find()) {
-                height = parseSize(heightMatcher.group(2).trim());
+                height = parseSize(heightMatcher.group(2).trim { it <= ' ' })
             }
-            ImageSize imageSize = new ImageSize(width, height);
-            imageSizeList.add(imageSize);
+            val imageSize = ImageSize(width, height)
+            imageSizeList.add(imageSize)
         }
     }
 
-    @Override
-    public Drawable getDrawable(String source) {
-        final ImageDrawable imageDrawable = new ImageDrawable(index++);
-
-        if (imageLoader != null) {
-            imageDrawable.setDrawable(imageLoader.getDefaultDrawable(), false);
-            imageLoader.loadImage(source, new HtmlImageLoader.Callback() {
-                @Override
-                public void onLoadComplete(final Bitmap bitmap) {
-                    runOnUi(new Runnable() {
-                        @Override
-                        public void run() {
-                            Drawable drawable = new BitmapDrawable(textView.getResources(), bitmap);
-                            imageDrawable.setDrawable(drawable, true);
-                            textView.setText(textView.getText());
-                        }
-                    });
+    override fun getDrawable(source: String): Drawable {
+        val imageDrawable = ImageDrawable(index++)
+        imageDrawable.setDrawable(imageLoader!!.defaultDrawable, false)
+        imageLoader?.loadImage(source, object : HtmlImageLoader.Callback {
+            override fun onLoadComplete(bitmap: Bitmap?) {
+                runOnUi {
+                    val drawable: Drawable = BitmapDrawable(
+                        textView?.resources, bitmap
+                    )
+                    imageDrawable.setDrawable(drawable, true)
+                    textView?.text = textView!!.text
                 }
+            }
 
-                @Override
-                public void onLoadFailed() {
-                    runOnUi(new Runnable() {
-                        @Override
-                        public void run() {
-                            imageDrawable.setDrawable(imageLoader.getErrorDrawable(), false);
-                            textView.setText(textView.getText());
-                        }
-                    });
+            override fun onLoadFailed() {
+                runOnUi {
+                    imageDrawable.setDrawable(imageLoader!!.errorDrawable, false)
+                    textView?.text = textView!!.text
                 }
-            });
-        }
-
-        return imageDrawable;
+            }
+        })
+        return imageDrawable
     }
 
-    private void runOnUi(Runnable r) {
+    private fun runOnUi(r: Runnable) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            r.run();
+            r.run()
         } else {
-            textView.post(r);
+            textView?.post(r)
         }
     }
 
-    private static int parseSize(String size) {
-        try {
-            return Integer.valueOf(size);
-        } catch (NumberFormatException e) {
-            return -1;
+    private class ImageSize(val width: Int, val height: Int) {
+        fun valid(): Boolean {
+            return width >= 0 && height >= 0
         }
     }
 
-    private static class ImageSize {
-        private final int width;
-        private final int height;
-
-        public ImageSize(int width, int height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        public boolean valid() {
-            return width >= 0 && height >= 0;
-        }
-    }
-
-    private class ImageDrawable extends BitmapDrawable {
-        // img 标签出现的位置
-        private final int position;
-        private Drawable mDrawable;
-
-        public ImageDrawable(int position) {
-            super();
-            this.position = position;
-        }
-
-        public void setDrawable(Drawable drawable, boolean fitSize) {
-            mDrawable = drawable;
-
+    private inner class ImageDrawable(  // img 标签出现的位置
+        private val position: Int
+    ) : BitmapDrawable() {
+        private var mDrawable: Drawable? = null
+        fun setDrawable(drawable: Drawable?, fitSize: Boolean) {
+            mDrawable = drawable
             if (mDrawable == null) {
-                setBounds(0, 0, 0, 0);
-                return;
+                setBounds(0, 0, 0, 0)
+                return
             }
-
-            int maxWidth = (imageLoader == null) ? 0 : imageLoader.getMaxWidth();
-            boolean fitWidth = imageLoader != null && imageLoader.fitWidth();
-            int width, height;
+            val maxWidth = if (imageLoader == null) 0 else imageLoader!!.maxWidth
+            val fitWidth = imageLoader != null && imageLoader!!.fitWidth()
+            var width: Int
+            var height: Int
             if (fitSize) { // real image
-                ImageSize imageSize = (imageSizeList.size() > position) ? imageSizeList.get(position) : null;
+                val imageSize = if (imageSizeList.size > position) imageSizeList[position] else null
                 if (imageSize != null && imageSize.valid()) {
-                    width = dp2px(imageSize.width);
-                    height = dp2px(imageSize.height);
+                    width = dp2px(imageSize.width.toFloat())
+                    height = dp2px(imageSize.height.toFloat())
                 } else {
-                    width = mDrawable.getIntrinsicWidth();
-                    height = mDrawable.getIntrinsicHeight();
+                    width = mDrawable!!.intrinsicWidth
+                    height = mDrawable!!.intrinsicHeight
                 }
             } else { // placeholder image
-                width = mDrawable.getIntrinsicWidth();
-                height = mDrawable.getIntrinsicHeight();
+                width = mDrawable!!.intrinsicWidth
+                height = mDrawable!!.intrinsicHeight
             }
-
             if (width > 0 && height > 0) {
                 // too large or should fit width
                 if (maxWidth > 0 && (width > maxWidth || fitWidth)) {
-                    height = (int) ((float) height / width * maxWidth);
-                    width = maxWidth;
+                    height = (height.toFloat() / width * maxWidth).toInt()
+                    width = maxWidth
                 }
             }
-
-            mDrawable.setBounds(0, 0, width, height);
-            setBounds(0, 0, width, height);
+            mDrawable!!.setBounds(0, 0, width, height)
+            setBounds(0, 0, width, height)
         }
 
-        @Override
-        public void draw(Canvas canvas) {
+        override fun draw(canvas: Canvas) {
             // override the draw to facilitate refresh function later
             if (mDrawable != null) {
-                if (mDrawable instanceof BitmapDrawable) {
-                    BitmapDrawable bitmapDrawable = (BitmapDrawable) mDrawable;
-                    Bitmap bitmap = bitmapDrawable.getBitmap();
-                    if (bitmap == null || bitmap.isRecycled()) {
-                        return;
+                if (mDrawable is BitmapDrawable) {
+                    val bitmapDrawable = mDrawable as BitmapDrawable
+                    val bitmap = bitmapDrawable.bitmap
+                    if (bitmap == null || bitmap.isRecycled) {
+                        return
                     }
                 }
-                mDrawable.draw(canvas);
+                mDrawable!!.draw(canvas)
             }
         }
 
-        private int dp2px(float dpValue) {
-            float scale = textView.getResources().getDisplayMetrics().density;
-            return (int) (dpValue * scale + 0.5f);
+        private fun dp2px(dpValue: Float): Int {
+            val scale = textView!!.resources.displayMetrics.density
+            return (dpValue * scale + 0.5f).toInt()
         }
     }
 }

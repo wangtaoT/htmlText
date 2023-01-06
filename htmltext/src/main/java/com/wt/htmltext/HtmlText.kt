@@ -1,133 +1,113 @@
-package com.wt.htmltext;
+package com.wt.htmltext
 
-import android.text.Html;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.TextUtils;
-import android.text.style.ClickableSpan;
-import android.text.style.ImageSpan;
-import android.text.style.URLSpan;
-import android.widget.TextView;
-import com.wt.htmltext.span.ImageClickSpan;
-import com.wt.htmltext.span.LinkClickSpan;
+import android.text.*
+import android.text.style.ClickableSpan
+import android.text.style.ImageSpan
+import android.text.style.URLSpan
+import android.widget.TextView
+import com.wt.htmltext.span.ImageClickSpan
+import com.wt.htmltext.span.LinkClickSpan
 
-import java.util.ArrayList;
-import java.util.List;
+class HtmlText private constructor(private var source: String?) {
 
-
-public class HtmlText {
-    private HtmlImageLoader imageLoader;
-    private OnTagClickListener onTagClickListener;
-    private After after;
-    private String source;
-
-    public interface After {
-        CharSequence after(SpannableStringBuilder ssb);
+    companion object {
+        /**
+         * 设置源文本
+         */
+        fun from(source: String?): HtmlText {
+            return HtmlText(source)
+        }
     }
 
-    private HtmlText(String source) {
-        this.source = source;
-    }
 
-    /**
-     * 设置源文本
-     */
-    public static HtmlText from(String source) {
-        return new HtmlText(source);
+    private var imageLoader: HtmlImageLoader? = null
+    private var onTagClickListener: OnTagClickListener? = null
+    private var after: After? = null
+
+    interface After {
+        fun after(ssb: SpannableStringBuilder?): CharSequence?
     }
 
     /**
      * 设置加载器
      */
-    public HtmlText setImageLoader(HtmlImageLoader imageLoader) {
-        this.imageLoader = imageLoader;
-        return this;
+    fun setImageLoader(imageLoader: HtmlImageLoader?): HtmlText {
+        this.imageLoader = imageLoader
+        return this
     }
 
     /**
      * 设置图片、链接点击监听器
      */
-    public HtmlText setOnTagClickListener(OnTagClickListener onTagClickListener) {
-        this.onTagClickListener = onTagClickListener;
-        return this;
+    fun setOnTagClickListener(onTagClickListener: OnTagClickListener?): HtmlText {
+        this.onTagClickListener = onTagClickListener
+        return this
     }
 
     /**
      * 对处理完成的文本再次处理
      */
-    public HtmlText after(After after) {
-        this.after = after;
-        return this;
+    fun after(after: After?): HtmlText {
+        this.after = after
+        return this
     }
 
     /**
      * 注入TextView
      */
-    public void into(TextView textView) {
-        if (TextUtils.isEmpty(source)) {
-            textView.setText("");
-            return;
+    fun into(textView: TextView) {
+        if (source.isNullOrEmpty()){
+            textView.text = ""
+            return
         }
-
-        HtmlImageGetter imageGetter = new HtmlImageGetter();
-        HtmlTagHandler tagHandler = new HtmlTagHandler();
-        List<String> imageUrls = new ArrayList<>();
-
-        imageGetter.setTextView(textView);
-        imageGetter.setImageLoader(imageLoader);
-        imageGetter.getImageSize(source);
-
-        tagHandler.setTextView(textView);
-        source = tagHandler.overrideTags(source);
-
-        Spanned spanned = Html.fromHtml(source, imageGetter, tagHandler);
-        SpannableStringBuilder ssb;
-        if (spanned instanceof SpannableStringBuilder) {
-            ssb = (SpannableStringBuilder) spanned;
+        val imageGetter = HtmlImageGetter()
+        val tagHandler = HtmlTagHandler()
+        val imageUrls: MutableList<String?> = ArrayList()
+        imageGetter.setTextView(textView)
+        imageGetter.setImageLoader(imageLoader)
+        imageGetter.getImageSize(source)
+        tagHandler.setTextView(textView)
+        source = tagHandler.overrideTags(source)
+        val spanned = Html.fromHtml(source, imageGetter, tagHandler)
+        val ssb: SpannableStringBuilder = if (spanned is SpannableStringBuilder) {
+            spanned
         } else {
-            ssb = new SpannableStringBuilder(spanned);
+            SpannableStringBuilder(spanned)
         }
-
-        // Hold image url link
-        imageUrls.clear();
-        ImageSpan[] imageSpans = ssb.getSpans(0, ssb.length(), ImageSpan.class);
-        for (int i = 0; i < imageSpans.length; i++) {
-            ImageSpan imageSpan = imageSpans[i];
-            String imageUrl = imageSpan.getSource();
-            int start = ssb.getSpanStart(imageSpan);
-            int end = ssb.getSpanEnd(imageSpan);
-            imageUrls.add(imageUrl);
-
-            ImageClickSpan imageClickSpan = new ImageClickSpan(textView.getContext(), imageUrls, i);
-            imageClickSpan.setListener(onTagClickListener);
-            ClickableSpan[] clickableSpans = ssb.getSpans(start, end, ClickableSpan.class);
+        val imageSpans = ssb.getSpans(0, ssb.length, ImageSpan::class.java)
+        for (i in imageSpans.indices) {
+            val imageSpan = imageSpans[i]
+            val imageUrl = imageSpan.source
+            val start = ssb.getSpanStart(imageSpan)
+            val end = ssb.getSpanEnd(imageSpan)
+            imageUrls.add(imageUrl)
+            val imageClickSpan = ImageClickSpan(textView.context, imageUrls, i)
+            imageClickSpan.setListener(onTagClickListener)
+            val clickableSpans = ssb.getSpans(start, end, ClickableSpan::class.java)
             if (clickableSpans != null) {
-                for (ClickableSpan cs : clickableSpans) {
-                    ssb.removeSpan(cs);
+                for (cs in clickableSpans) {
+                    ssb.removeSpan(cs)
                 }
             }
-            ssb.setSpan(imageClickSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            ssb.setSpan(imageClickSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
 
         // Hold text url link
-        URLSpan[] urlSpans = ssb.getSpans(0, ssb.length(), URLSpan.class);
+        val urlSpans = ssb.getSpans(0, ssb.length, URLSpan::class.java)
         if (urlSpans != null) {
-            for (URLSpan urlSpan : urlSpans) {
-                int start = ssb.getSpanStart(urlSpan);
-                int end = ssb.getSpanEnd(urlSpan);
-                ssb.removeSpan(urlSpan);
-                LinkClickSpan linkClickSpan = new LinkClickSpan(textView.getContext(), urlSpan.getURL());
-                linkClickSpan.setListener(onTagClickListener);
-                ssb.setSpan(linkClickSpan, start, end, Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
+            for (urlSpan in urlSpans) {
+                val start = ssb.getSpanStart(urlSpan)
+                val end = ssb.getSpanEnd(urlSpan)
+                ssb.removeSpan(urlSpan)
+                val linkClickSpan = LinkClickSpan(textView.context, urlSpan.url)
+                linkClickSpan.setListener(onTagClickListener)
+                ssb.setSpan(linkClickSpan, start, end, Spannable.SPAN_EXCLUSIVE_INCLUSIVE)
             }
         }
-
-        CharSequence charSequence = ssb;
+        var charSequence: CharSequence? = ssb
         if (after != null) {
-            charSequence = after.after(ssb);
+            charSequence = after!!.after(ssb)
         }
-
-        textView.setText(charSequence);
+        textView.text = charSequence
     }
 }
